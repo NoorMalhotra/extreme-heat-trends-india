@@ -1,0 +1,6 @@
+pandas
+numpy
+xarray
+matplotlib
+scipy
+netCDF4
