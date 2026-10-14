@@ -1,7 +1,0 @@
-This folder contains the project's generated charts, summary tables, and analysis results.
-pandas
-numpy
-xarray
-matplotlib
-scipy
-netCDF4
