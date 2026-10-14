@@ -1,86 +1,130 @@
-# extreme-heat-trends-india
-from scipy.stats import theilslopes, kendalltau
+Is Extreme Heat Changing Faster Than We Realize?
 
-# 1. Define the reference and analysis periods
-reference = ds.sel(time=slice("2000-01-01", "2014-12-31"))
-analysis = ds.sel(time=slice("2015-01-01", "2025-12-31"))
+### An Exploratory Analysis of Extreme-Heat Trends Across Selected Grid Cells in Punjab, India (2000–2025)
 
-# 2. Calculate monthly 90th-percentile thresholds
-threshold = reference["tmax"].groupby("time.month").quantile(
-    0.90, dim="time", skipna=True
-)
+## 🌍 Overview
 
-# 3. Match each analysis day to its calendar-month threshold
-daily_threshold = threshold.sel(month=analysis["time"].dt.month)
+Extreme heat is an increasingly important climate concern, affecting public health, agriculture, energy demand, and economic activity. Understanding how daily maximum temperatures vary over time can help identify patterns in extreme-temperature events and support further climate research.
 
-# 4. Count exceedance days, preserving missing observations
-valid = analysis["tmax"].notnull()
-exceedances = (analysis["tmax"] > daily_threshold).where(valid)
+This project uses Python to explore daily maximum temperature data attributed to the **India Meteorological Department (IMD)** across selected grid cells in Punjab, India, covering 2000–2025.
 
-annual_counts = exceedances.groupby("time.year").sum(
-    dim="time", skipna=True
-)
+The analysis examines seasonal temperature patterns, annual variations, and changes in the frequency of unusually hot days using percentile-based indicators and statistical trend analysis.
 
-# Exclude grid cells with no valid observations
-has_data = valid.any(dim="time")
-annual_counts = annual_counts.where(has_data)
+## 🎯 Objectives
 
-results = (
-    annual_counts.to_dataframe(name="extreme_heat_days")
-    .reset_index()
-    .dropna(subset=["extreme_heat_days"])
-)
+- Analyze daily maximum temperature patterns from 2000 to 2025.
+- Explore seasonal and monthly temperature variations.
+- Identify unusually hot days using monthly 90th-percentile temperature thresholds.
+- Examine annual variations in the frequency of extreme-heat days.
+- Apply statistical methods to explore potential long-term trends.
+- Document data limitations and uncertainty in interpreting climate trends.
 
-# 5. Estimate trends using Theil-Sen slopes and Kendall's tau
-trend_results = []
+## 📊 Dataset
 
-for (lat, lon), group in results.groupby(["lat", "lon"]):
-    group = group.sort_values("year")
-    x = group["year"].to_numpy()
-    y = group["extreme_heat_days"].to_numpy()
+The project uses gridded daily maximum temperature data attributed to the India Meteorological Department (IMD).
 
-    if len(y) >= 5 and np.unique(y).size > 1:
-        slope, intercept, low, high = theilslopes(y, x)
-        tau, p_value = kendalltau(x, y)
+| Attribute | Details |
+|---|---|
+| Data variable | Daily maximum temperature (`tmax`) |
+| Period | 2000–2025 |
+| Geographic focus | Selected grid cells in Punjab, India |
+| Spatial coverage | 6 grid cells in the supplied dataset; 5 contain usable temperature data |
+| Temporal resolution | Daily |
+| Data format | NetCDF (`.nc`) |
+| Units | Degrees Celsius (°C) |
+| Source | [India Meteorological Department](https://imdpune.gov.in/) |
 
-        trend_results.append({
-            "latitude": lat,
-            "longitude": lon,
-            "sen_slope_days_per_year": slope,
-            "slope_95ci_low": low,
-            "slope_95ci_high": high,
-            "kendall_tau": tau,
-            "kendall_p_value": p_value
-        })
+The current dataset covers a limited geographical area and should not be interpreted as representing all of Punjab or India.
 
-trend_table = pd.DataFrame(trend_results)
+## 🛠️ Tools and Technologies
 
-# 6. Plot annual counts for 2015–2025
-plt.figure(figsize=(12, 6))
+- **Python** — data analysis
+- **Pandas** — data manipulation and tabular analysis
+- **NumPy** — numerical operations
+- **Xarray** — handling multidimensional NetCDF climate data
+- **Matplotlib** — data visualization
+- **SciPy** — statistical analysis
+- **Google Colab** — notebook development and execution
+- **GitHub** — version control and project documentation
 
-for (lat, lon), group in results.groupby(["lat", "lon"]):
-    group = group.sort_values("year")
-    plt.plot(
-        group["year"],
-        group["extreme_heat_days"],
-        marker="o",
-        linewidth=1.2,
-        label=f"{lat}°N, {lon}°E"
-    )
+## 🔬 Methodology
 
-plt.title("Extreme-Heat Days: Evaluation Period 2015–2025")
-plt.xlabel("Year")
-plt.ylabel("Days Above Reference-Period Threshold")
-plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left")
-plt.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
+The project follows an exploratory data-analysis workflow:
 
-print("Exploratory trend results:")
-display(trend_table.round(4))
+1. **Data loading:** Load the gridded temperature dataset using Xarray.
+2. **Data inspection:** Examine the dataset's dimensions, variables, date range, missing values, and spatial coverage.
+3. **Data preparation:** Convert the data into a tabular structure for analysis and check temporal completeness.
+4. **Exploratory analysis:** Investigate daily, monthly, and annual temperature patterns.
+5. **Extreme-heat indicators:** Explore monthly 90th-percentile thresholds to identify unusually hot days.
+6. **Trend analysis:** Examine annual changes using statistical methods and visualizations.
+7. **Interpretation:** Evaluate observed patterns while accounting for the limited spatial coverage and uncertainty in trend estimates.
 
-# 7. Save outputs
-results.to_csv("extreme_heat_days_2015_2025.csv", index=False)
-trend_table.to_csv("extreme_heat_trend_results.csv", index=False)
+The precise threshold reference period and statistical methods used in the final analysis will be documented alongside the corresponding results.
 
-print("Saved both CSV files.")
+## 📈 Key Areas of Analysis
+
+- Monthly and seasonal temperature patterns
+- Annual temperature variations across grid cells
+- Identification of unusually hot days
+- Annual frequency of extreme-heat days
+- Statistical assessment of potential trends
+- Data quality, missing observations, and analytical limitations
+
+## 📁 Repository Structure
+
+```text
+extreme-heat-trends-india/
+│
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── extreme_heat_analysis.ipynb
+│
+└── outputs/
+    └── README.md
+```
+
+The notebook filename shown above is illustrative; the uploaded file may have a different name.
+
+- `README.md` — project overview, objectives, and methodology
+- `requirements.txt` — Python dependencies
+- `.gitignore` — files Git should ignore
+- `extreme_heat_analysis.ipynb` — interactive analysis notebook
+- `outputs/` — visualizations, summary tables, and generated results
+
+## 🚧 Current Status
+
+**Project stage:** Exploratory data analysis and statistical investigation.
+
+The dataset has been inspected, and initial visualizations and preliminary grid-cell trend estimates have been explored. Further analysis is needed to establish robust conclusions about changes in extreme-heat frequency.
+
+The current analysis is limited to five usable grid cells in Punjab, India. Preliminary results should not be interpreted as conclusive evidence of a region-wide trend or accelerating extreme heat.
+
+## ⚠️ Limitations
+
+- The spatial coverage is limited to a small number of grid cells.
+- Results may not represent broader regional or national climate patterns.
+- Extreme-heat classifications depend on the selected percentile threshold and reference period.
+- Statistical trends require careful interpretation, including consideration of sample size, variability, and robustness.
+- The analysis identifies statistical patterns but does not independently establish the causes of observed temperature changes.
+
+## 🔮 Future Improvements
+
+- Expand the geographical coverage to include additional regions of India.
+- Compare multiple baseline periods for defining extreme heat.
+- Investigate heatwave duration and consecutive hot days.
+- Assess the sensitivity of results to alternative statistical methods.
+- Add clearer maps and spatial comparisons.
+- Compare findings with published climate research and relevant official reports.
+
+## 💡 Why This Project Matters
+
+Extreme heat is not just a weather phenomenon; it has implications for livelihoods, infrastructure, agriculture, and economic resilience. Exploring historical temperature records is one way to investigate how heat extremes vary over time and what further evidence is needed to understand their broader significance.
+
+This project demonstrates the use of Python, climate-data handling, exploratory analysis, visualization, and statistical reasoning in an applied environmental data-science problem.
+
+## 👩‍💻 Author
+
+Created as a data-science project exploring historical temperature patterns and extreme-heat indicators in India.
+
+**Feedback and suggestions are welcome.**
